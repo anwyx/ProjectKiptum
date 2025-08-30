@@ -1,0 +1,19 @@
+dash==2.17.1
+opencv-python>=4.9.0
+numpy>=1.26.0
+pillow>=10.2.0
+torch>=2.2.0
+transformers>=4.42.0
+sentencepiece
+accelerate
+huggingface_hub
+onnxruntime
+python-dotenv
+rich
+ultralytics
+# face detection (HOG/haar optional)
+mtcnn
+scikit-image
+cryptography
+# Dash extras
+plotly
