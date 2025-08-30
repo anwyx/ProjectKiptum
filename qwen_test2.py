@@ -83,6 +83,8 @@ messages = [
     }
 ]
 
+print(f"[Debug] Processing image: {image_path}")
+
 # Build inputs
 chat_text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 image_inputs, video_inputs = process_vision_info(messages)
@@ -122,6 +124,13 @@ for attempt in range(1, attempts + 1):
         trimmed = out[:, inputs.input_ids.shape[1]:]
         text = processor.batch_decode(trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
         print("Output:\n", text.strip())
+        # Check for early stop
+        if args.prompt_key == 'detect_descriptive':
+            if not text.strip().splitlines()[-1].strip().endswith(tuple('0123456789')):
+                print('[Warning] Output may be truncated or incomplete.')
+        else:
+            if not text.strip().endswith(']'):
+                print('[Warning] Output does not end with "]". Possible early stop or truncation.')
         break
     except RuntimeError as e:
         msg = str(e)

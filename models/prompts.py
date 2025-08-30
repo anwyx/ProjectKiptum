@@ -60,23 +60,23 @@ PROMPTS = {
     # New non-JSON exploratory prompt for debugging / analysis phase
     "detect_descriptive": (
         """
-        You are a privacy visual inspector. Identify every region that might contain privacy-relevant information.
+        You are a privacy visual inspector. Carefully describe everything in the image that might contain privacy-relevant information.
 
         Categories to consider (do not invent new labels): face, child, license_plate, id_card, credit_card, document, screen, barcode, signature, location_text, other
 
-        Task: Produce a human-readable multi-line report (NOT JSON) to help a developer debug detection. Each detected or uncertain region should be on its own line with the format:
-        <index>. category=<category>; reason=<very short reason>; bbox=[x,y,w,h]; confidence=<high|medium|low>
+        Task: Write a concise, clear, human-readable summary of all privacy-relevant or potentially sensitive regions you detect. For each, briefly mention what it is, why it might be sensitive, and (if possible) its approximate location or bounding box. If you are uncertain, say so. If nothing is found, say so clearly.
 
         Guidelines:
-        - If you are uncertain but something MIGHT be sensitive, include it with confidence=low and reason containing the word "uncertain".
-        - Provide approximate bounding boxes (integers). If you truly cannot estimate, use [0,0,0,0].
-        - If nothing is found, output a single line: NONE
-        - Do NOT output JSON, markdown, or prose paragraphs. ONLY the concise list lines.
-        - Keep reasons terse (<=6 words).
+        - Use natural language, not JSON or lists unless you prefer.
+        - You may use bullet points, sentences, or a short paragraph.
+        - If you are uncertain but something might be sensitive, mention it as a possibility.
+        - If you can estimate a location or region, include it, but it's not required.
+        - If nothing is found, say "No privacy-relevant content detected." or similar.
 
-        Example output format:
-        1. category=face; reason=adult male face; bbox=[120,60,90,90]; confidence=high
-        2. category=document; reason=paper with text; bbox=[40,180,300,200]; confidence=medium
+        Example outputs:
+        - "There is a visible adult male face in the upper left, and a document with readable text in the lower right."
+        - "A plastic card with a number layout (possibly a credit card) is present near the center. There is also a barcode in the top right."
+        - "No privacy-relevant content detected."
         """
     ),
     "describe": (
