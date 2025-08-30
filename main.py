@@ -2,10 +2,10 @@ import os
 import argparse
 
 from config.model_config import MODEL_CONFIG, DEFAULT_PROMPTS, DEFAULT_SYSTEM_MESSAGE
-from src.models.qwen_model import QwenVLModel
-from src.inference.face_detection import detect_faces
-from src.visualization.annotation import process_vlm_detections
-from src.utils.image_utils import resize_image, save_image
+from models.qwen_model import QwenVLModel
+from utils.detection import detect_faces
+from utils.annotations import process_vlm_detections
+from utils.image_utils import resize_image, save_image
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Face detection using Qwen VL model")
