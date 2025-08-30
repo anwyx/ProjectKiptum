@@ -1,0 +1,4 @@
+pip
+wheel
+setuptools
+maestro[qwen-2-5-vl]
