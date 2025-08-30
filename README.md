@@ -61,7 +61,6 @@ ProjectKiptum/
 
 ## 🚀 Quick Start
 
-Run the example script to instantiate the TAMP environment, inspect the registry, and perform a pick/place action:
 
 ```bash
 python test.py
@@ -69,26 +68,7 @@ python test.py
 
 You should see output like:
 
-```
-=== Testing Pick Action ===
-checking object at True
-Preconditions met for pick
-Create subtask for pick
-Executing pick action...
-Pick action completed successfully (simulated)
-Step finished for action: pick
-Pick result: reward=10, done={'success': tensor(False)}, info={'success': True}
 
-=== Testing Place Action ===
-Preconditions met for place
-Create subtask for place
-Executing place action...
-Pose([-0.0840995, -0.0953381, 0.0586828], [-0.000479358, 0.888979, 0.457947, -0.000480696])
-Place action completed successfully (simulated)
-Step finished for action: place
-Place result: reward=10, done={'success': tensor(True)}, info={'success': True}
-```
-First done measn the overall task is finished, the info return whether subtask (symbolic action) finished
 
 ---
 
