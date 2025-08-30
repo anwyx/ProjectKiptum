@@ -86,9 +86,7 @@ messages = [
 # Build inputs
 chat_text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 image_inputs, video_inputs = process_vision_info(messages)
-print(f"#images={len(image_inputs)} #videos={len(video_inputs)}")
-if len(image_inputs) == 0:
-    print("[Warning] No image inputs detected! The model will not see the image. If this persists, try loading the image with PIL and pass directly to processor.")
+
 inputs = processor(
     text=[chat_text],
     images=image_inputs,
