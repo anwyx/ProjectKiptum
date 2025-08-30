@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--image', default='data/processed/WechatIMG74255_blurred.jpg', help='Path to local image file')
 parser.add_argument('--model', default='Qwen/Qwen2.5-VL-3B-Instruct', help='Model name')
 parser.add_argument('--max-new', type=int, default=512, help='Max new tokens to generate')
-parser.add_argument('--prompt-key', default='generalize_v2', help='Prompt key defined in models/prompts.py')
+parser.add_argument('--prompt-key', default='detect_descriptive', help='Prompt key defined in models/prompts.py')
 # Decoding / stability controls
 parser.add_argument('--temperature', type=float, default=0.0, help='Temperature (>0 enables sampling)')
 parser.add_argument('--top-p', type=float, default=0.9, help='Top-p nucleus sampling')
@@ -58,6 +58,12 @@ print(f"Precision dtype: {dtype}")
 # Load prompt text
 system_prompt = get_prompt(args.prompt_key)
 
+# Decide user suffix depending on prompt style
+if args.prompt_key == 'detect_descriptive':
+    user_tail = "List detections now as specified (or NONE)."
+else:
+    user_tail = "Return ONLY valid minified JSON now."
+
 # Minimal load
 print('[Load] Loading processor/model...')
 processor = AutoProcessor.from_pretrained(args.model, trust_remote_code=True)
@@ -72,7 +78,7 @@ messages = [
         "role": "user",
         "content": [
             {"type": "image", "image": image_path.as_posix()},
-            {"type": "text", "text": "Return ONLY valid minified JSON now."},
+            {"type": "text", "text": user_tail},
         ],
     }
 ]

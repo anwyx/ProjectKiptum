@@ -57,6 +57,28 @@ PROMPTS = {
         Now output ONLY JSON for the CURRENT image.
         """
     ),
+    # New non-JSON exploratory prompt for debugging / analysis phase
+    "detect_descriptive": (
+        """
+        You are a privacy visual inspector. Identify every region that might contain privacy-relevant information.
+
+        Categories to consider (do not invent new labels): face, child, license_plate, id_card, credit_card, document, screen, barcode, signature, location_text, other
+
+        Task: Produce a human-readable multi-line report (NOT JSON) to help a developer debug detection. Each detected or uncertain region should be on its own line with the format:
+        <index>. category=<category>; reason=<very short reason>; bbox=[x,y,w,h]; confidence=<high|medium|low>
+
+        Guidelines:
+        - If you are uncertain but something MIGHT be sensitive, include it with confidence=low and reason containing the word "uncertain".
+        - Provide approximate bounding boxes (integers). If you truly cannot estimate, use [0,0,0,0].
+        - If nothing is found, output a single line: NONE
+        - Do NOT output JSON, markdown, or prose paragraphs. ONLY the concise list lines.
+        - Keep reasons terse (<=6 words).
+
+        Example output format:
+        1. category=face; reason=adult male face; bbox=[120,60,90,90]; confidence=high
+        2. category=document; reason=paper with text; bbox=[40,180,300,200]; confidence=medium
+        """
+    ),
     "describe": (
         """
         You are an advanced image understanding and moderation assistant. Your job is to:
