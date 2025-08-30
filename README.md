@@ -91,8 +91,7 @@ First done measn the overall task is finished, the info return whether subtask (
 
 ## 📚 References
 
-- [ManiSkill Documentation](https://maniskill.readthedocs.io/en/latest/user_guide/)  
-- [PDDL tutorial](https://fareskalaboud.github.io/LearnPDDL/)  
+- [Zero-Shot Object Detection with Qwen2.5-VL](https://github.com/roboflow/notebooks/blob/main/notebooks/zero-shot-object-detection-with-qwen2-5-vl.ipynb)  
 
 ---
 
@@ -100,9 +99,4 @@ First done measn the overall task is finished, the info return whether subtask (
 ## 🤝 Contributing
 
 Feel free to open issues or submit pull requests.
-
----
-
-## 📄 License
-
 
