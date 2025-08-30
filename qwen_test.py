@@ -97,5 +97,7 @@ for idx, img_path in enumerate(targets, 1):
             print(json.dumps(parsed, indent=2))
         except Exception:
             print('[Response] Could not parse JSON, showing raw output above.')
+            print('[Debug] Model thinking process (full output):')
+            print(raw)
     except Exception as e:
         print(f'  Error processing {img_path}: {e}')
