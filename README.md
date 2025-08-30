@@ -43,19 +43,15 @@ ProjectKiptum/
 
 1. Clone the repo
    ```bash
-   git clone https://github.com/HaoranZhangumich/TAMPBench
-   cd TAMPbench
+   git clone https://github.com/anwyx/ProjectKiptum
+   cd ProjectKiptum
    ```
 
-2. Create & activate a virtual environment
+2. Install dependencies
    ```bash
-    conda env create -f environment.yaml
+    pip install -r requirements.txt
    ```
 
-3. Install dependencies
-   ```bash
-   pip install -e .
-   ```
    > Adjust the above list to match the actual packages your code requires.
 
 ---
@@ -65,7 +61,7 @@ ProjectKiptum/
 Run the example script to instantiate the TAMP environment, inspect the registry, and perform a pick/place action:
 
 ```bash
-python example/test.py
+python test.py
 ```
 
 You should see output like:
@@ -91,60 +87,6 @@ Place result: reward=10, done={'success': tensor(True)}, info={'success': True}
 ```
 First done measn the overall task is finished, the info return whether subtask (symbolic action) finished
 
-
----
-## 📅 Project Roadmap & Schedule
-
-| Milestone                         | Target Date     | Status       |
-|-----------------------------------|-----------------|--------------|
-| PDDL ↔ ManiSkill conversion   | July 15, 2025   | Finished  |
-
-
-#TODO
-
----
-
-## 📝 Usage
-
-### Importing your environment
-
-```python
-from tampbench.env.tamp_env import TAMPEnvironment
-
-# Create:
-env = TAMPEnvironment(
-    domain_file="path/to/domain.pddl",
-    problem_file="path/to/problem.pddl"
-)
-
-# Reset & Step:
-obs = env.reset()
-obs, reward, done, info = env.step("pick", {"r": "panda_wristcam", "o": "cubeA", "p": "pos1"})
-```
-
-### Key Components
-
-- **`action.py`**  
-  Wraps PDDL actions into executable operators.
-
-- **`pddl_maniskill_converter.py`**  
-  Converts PDDL problems into a ManiSkill task, with:
-  - `_load_scene`: builds cubes, table, robot  
-  - `_initialize_episode`: places cubes with randomized sampler  
-  - `evaluate()`: checks goal predicates and returns a 0-D tensor success flag
-
-- **`tamp_env.py`** 
-  OpenAI gym-like environment wrapper for TAMP 
-  
-
-
----
-
-## ⚙️ Configuration
-
-- TODO
-
-
 ---
 
 ## 📚 References
@@ -154,18 +96,13 @@ obs, reward, done, info = env.step("pick", {"r": "panda_wristcam", "o": "cubeA",
 
 ---
 
-## 🛠️ Development
-
-- TODO
-
----
 
 ## 🤝 Contributing
 
-Feel free to open issues or submit pull requests. Please follow the [Contributor Guidelines](./CONTRIBUTING.md) (TBD). (TODO)
+Feel free to open issues or submit pull requests.
 
 ---
 
 ## 📄 License
 
-TODO
+
