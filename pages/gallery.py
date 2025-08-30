@@ -27,8 +27,8 @@ def list_blurred_images():
     if not IMG_DIR.exists():
         return []
     imgs = list(IMG_DIR.glob("*_blurred.*"))
-    # Sort by modified time descending
-    imgs.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    # Sort by name ascending
+    imgs.sort(key=lambda p: p.name)
     return imgs
 
 
@@ -38,8 +38,8 @@ def list_raw_images():
         return []
     exts = {".jpg", ".jpeg", ".png"}
     imgs = [p for p in RAW_DIR.iterdir() if p.suffix.lower() in exts]
-    # Sort by modified time descending
-    imgs.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    # Sort by name ascending
+    imgs.sort(key=lambda p: p.name)
     return imgs
 
 
