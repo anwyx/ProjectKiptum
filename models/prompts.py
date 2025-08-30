@@ -30,6 +30,33 @@ PROMPTS = {
         {"items":[{"category":"face","reason":"adult male face","bbox":[12,34,56,78]}]}
         """
     ),
+    # New enhanced few-shot, procedural version to reduce empty outputs
+    "generalize_v2": (
+        """
+        You are a privacy visual inspector. Extract ALL privacy-relevant regions in the current image.
+
+        Categories: face, child, license_plate, id_card, credit_card, document, screen, barcode, signature, location_text, other
+
+        Procedure (do NOT output these steps):
+        1. Systematically scan for EACH category above.
+        2. For each region found: record category, a very short reason, bounding box [x,y,w,h] (integers, top-left origin). Approximate if needed; if extremely uncertain use [0,0,0,0].
+        3. Include LOW-CONFIDENCE but plausible sensitive regions with reason containing the word "uncertain".
+        4. Only return an empty list if you carefully verified NONE exist.
+
+        Output ONLY valid minified JSON exactly:
+        {"items":[{"category":"<category>","reason":"<short>","bbox":[x,y,w,h]}]}
+
+        Few-shot reference examples (NOT the current image):
+        Example A (face + document):
+        {"items":[{"category":"face","reason":"adult male face","bbox":[120,60,90,90]},{"category":"document","reason":"paper with readable text","bbox":[40,180,300,200]}]}
+        Example B (card + barcode):
+        {"items":[{"category":"credit_card","reason":"plastic card number layout","bbox":[10,40,180,110]},{"category":"barcode","reason":"striped code pattern","bbox":[220,50,120,60]}]}
+        Example C (nothing sensitive):
+        {"items":[]}
+
+        Now output ONLY JSON for the CURRENT image.
+        """
+    ),
     "describe": (
         """
         You are an advanced image understanding and moderation assistant. Your job is to:
