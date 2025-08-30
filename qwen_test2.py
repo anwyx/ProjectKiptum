@@ -4,6 +4,7 @@ from transformers import AutoProcessor, AutoModelForVision2Seq
 import argparse
 from pathlib import Path
 from models.prompts import get_prompt  # added
+from PIL import Image
 
 # Try to import vision helper
 try:
@@ -24,6 +25,9 @@ parser.add_argument('--repetition-penalty', type=float, default=1.0, help='Repet
 parser.add_argument('--force-fp16', action='store_true', help='Force fp16 even on devices where it may be unstable')
 parser.add_argument('--force-fp32', action='store_true', help='Force fp32 precision')
 parser.add_argument('--retry-fp32', action='store_true', help='On NaN/inf prob error, reload model in fp32 and retry')
+# Debug / fallback
+parser.add_argument('--debug', action='store_true', help='Verbose diagnostics')
+parser.add_argument('--force-pil', action='store_true', help='Force PIL image ingestion instead of path reference')
 args = parser.parse_args()
 
 image_path = Path(args.image)
@@ -46,7 +50,6 @@ else:
     if DEVICE == 'mps':
         dtype = torch.float32  # safer
     elif DEVICE == 'cuda':
-        # Prefer bfloat16 if available for stability
         if torch.cuda.is_bf16_supported():
             dtype = torch.bfloat16
         else:
@@ -60,34 +63,57 @@ system_prompt = get_prompt(args.prompt_key)
 
 # Decide user suffix depending on prompt style
 if args.prompt_key == 'detect_descriptive':
-    user_tail = "List detections now as specified (or NONE)."
+    user_tail = (
+        "Describe ALL plausible privacy-relevant elements (faces, text docs, cards, plates, screens, IDs, barcodes, etc). "
+        "Include uncertain possibilities; only say no content if you carefully checked every category."
+    )
 else:
     user_tail = "Return ONLY valid minified JSON now."
 
-# Minimal load
 print('[Load] Loading processor/model...')
 processor = AutoProcessor.from_pretrained(args.model, trust_remote_code=True)
 model = AutoModelForVision2Seq.from_pretrained(args.model, trust_remote_code=True, torch_dtype=dtype)
 model.to(DEVICE).eval()
 print('[Load] Done.')
 
-# Messages include system role with privacy prompt
+# Prepare image reference or PIL object
+if args.force_pil:
+    pil_image = Image.open(image_path).convert('RGB')
+    image_content = pil_image
+else:
+    image_content = image_path.as_posix()
+
 messages = [
     {"role": "system", "content": system_prompt},
-    {
-        "role": "user",
-        "content": [
-            {"type": "image", "image": image_path.as_posix()},
-            {"type": "text", "text": user_tail},
-        ],
-    }
+    {"role": "user", "content": [
+        {"type": "image", "image": image_content},
+        {"type": "text", "text": user_tail},
+    ]}
 ]
 
 print(f"[Debug] Processing image: {image_path}")
 
-# Build inputs
 chat_text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 image_inputs, video_inputs = process_vision_info(messages)
+if args.debug:
+    print(f"[Debug] image_inputs len={len(image_inputs)} video_inputs len={len(video_inputs)}")
+    if len(image_inputs):
+        try:
+            # Some versions store tensors; inspect shape
+            first = image_inputs[0]
+            if torch.is_tensor(first):
+                print(f"[Debug] First image tensor shape: {tuple(first.shape)} dtype={first.dtype}")
+        except Exception:
+            pass
+
+# If no image inputs and we did NOT force PIL, retry with PIL fallback automatically
+if len(image_inputs) == 0 and not args.force_pil:
+    print('[Warn] No image tensors produced. Retrying with PIL ingestion...')
+    pil_image = Image.open(image_path).convert('RGB')
+    messages[1]['content'][0]['image'] = pil_image
+    chat_text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    image_inputs, video_inputs = process_vision_info(messages)
+    print(f"[Debug] After PIL fallback: image_inputs len={len(image_inputs)}")
 
 inputs = processor(
     text=[chat_text],
@@ -98,24 +124,23 @@ inputs = processor(
 )
 inputs = inputs.to(DEVICE)
 
-# Assemble generation kwargs
+if args.debug:
+    if 'pixel_values' in inputs:
+        pv = inputs['pixel_values']
+        print(f"[Debug] pixel_values shape={tuple(pv.shape)} dtype={pv.dtype}")
+    print(f"[Debug] pad_token_id={getattr(processor.tokenizer, 'pad_token_id', None)} eos_token_id={getattr(model.config, 'eos_token_id', None)}")
+
 gen_kwargs = {
     'max_new_tokens': args.max_new,
     'repetition_penalty': args.repetition_penalty,
     'pad_token_id': getattr(processor.tokenizer, 'pad_token_id', None) or getattr(model.config, 'pad_token_id', None) or getattr(model.config, 'eos_token_id', None),
 }
 if args.temperature > 0:
-    gen_kwargs.update({
-        'do_sample': True,
-        'temperature': args.temperature,
-        'top_p': args.top_p,
-    })
+    gen_kwargs.update({'do_sample': True, 'temperature': args.temperature, 'top_p': args.top_p})
 else:
     gen_kwargs.update({'do_sample': False})
-
 print(f"[Gen] kwargs: {gen_kwargs}")
 
-# Generation with fallback
 attempts = 2 if args.retry_fp32 else 1
 for attempt in range(1, attempts + 1):
     try:
@@ -124,13 +149,12 @@ for attempt in range(1, attempts + 1):
         trimmed = out[:, inputs.input_ids.shape[1]:]
         text = processor.batch_decode(trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
         print("Output:\n", text.strip())
-        # Check for early stop
-        if args.prompt_key == 'detect_descriptive':
-            if not text.strip().splitlines()[-1].strip().endswith(tuple('0123456789')):
-                print('[Warning] Output may be truncated or incomplete.')
-        else:
-            if not text.strip().endswith(']'):
-                print('[Warning] Output does not end with "]". Possible early stop or truncation.')
+        # Remove old truncation heuristic for descriptive mode (not reliable)
+        if args.prompt_key != 'detect_descriptive' and not text.strip().endswith(']'):
+            print('[Warning] Output does not end with "]". Possible early stop or truncation.')
+        # Optional hint if model claimed none but we expect faces
+        if args.prompt_key == 'detect_descriptive' and 'no privacy' in text.lower() and args.debug:
+            print('[Debug] Model reported none. Consider raising temperature (e.g., 0.5) or using JSON prompt with few-shots.')
         break
     except RuntimeError as e:
         msg = str(e)
@@ -138,7 +162,8 @@ for attempt in range(1, attempts + 1):
         nan_issue = 'probability tensor contains either' in msg or 'inf' in msg.lower()
         if nan_issue and args.retry_fp32 and attempt < attempts:
             print('[Recover] Reloading model in fp32 and retrying...')
-            torch.cuda.empty_cache() if DEVICE == 'cuda' else None
+            if DEVICE == 'cuda':
+                torch.cuda.empty_cache()
             model = AutoModelForVision2Seq.from_pretrained(args.model, trust_remote_code=True, torch_dtype=torch.float32)
             model.to(DEVICE).eval()
             continue
