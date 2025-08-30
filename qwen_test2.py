@@ -15,8 +15,15 @@ except ImportError:
 parser = argparse.ArgumentParser()
 parser.add_argument('--image', default='data/processed/WechatIMG74255_blurred.jpg', help='Path to local image file')
 parser.add_argument('--model', default='Qwen/Qwen2.5-VL-3B-Instruct', help='Model name')
-parser.add_argument('--max-new', type=int, default=1024, help='Max new tokens to generate')
-parser.add_argument('--prompt-key', default='generalize_v2', help='Prompt key defined in models/prompts.py')  # added
+parser.add_argument('--max-new', type=int, default=512, help='Max new tokens to generate')
+parser.add_argument('--prompt-key', default='generalize_v2', help='Prompt key defined in models/prompts.py')
+# Decoding / stability controls
+parser.add_argument('--temperature', type=float, default=0.0, help='Temperature (>0 enables sampling)')
+parser.add_argument('--top-p', type=float, default=0.9, help='Top-p nucleus sampling')
+parser.add_argument('--repetition-penalty', type=float, default=1.05, help='Repetition penalty')
+parser.add_argument('--force-fp16', action='store_true', help='Force fp16 even on devices where it may be unstable')
+parser.add_argument('--force-fp32', action='store_true', help='Force fp32 precision')
+parser.add_argument('--retry-fp32', action='store_true', help='On NaN/inf prob error, reload model in fp32 and retry')
 args = parser.parse_args()
 
 image_path = Path(args.image)
@@ -30,15 +37,33 @@ DEVICE = (
 )
 print(f"Device: {DEVICE}")
 
-dtype = torch.float16 if DEVICE in ('cuda', 'mps') else torch.float32
+# Heuristic: avoid fp16 on mps (can cause NaNs), allow override
+if args.force_fp32:
+    dtype = torch.float32
+elif args.force_fp16:
+    dtype = torch.float16
+else:
+    if DEVICE == 'mps':
+        dtype = torch.float32  # safer
+    elif DEVICE == 'cuda':
+        # Prefer bfloat16 if available for stability
+        if torch.cuda.is_bf16_supported():
+            dtype = torch.bfloat16
+        else:
+            dtype = torch.float16
+    else:
+        dtype = torch.float32
+print(f"Precision dtype: {dtype}")
 
 # Load prompt text
 system_prompt = get_prompt(args.prompt_key)
 
 # Minimal load
+print('[Load] Loading processor/model...')
 processor = AutoProcessor.from_pretrained(args.model, trust_remote_code=True)
 model = AutoModelForVision2Seq.from_pretrained(args.model, trust_remote_code=True, torch_dtype=dtype)
 model.to(DEVICE).eval()
+print('[Load] Done.')
 
 # Messages include system role with privacy prompt
 messages = [
@@ -47,7 +72,7 @@ messages = [
         "role": "user",
         "content": [
             {"type": "image", "image": image_path.as_posix()},
-            {"type": "text", "text": "Return JSON now."},
+            {"type": "text", "text": "Return ONLY valid minified JSON now."},
         ],
     }
 ]
@@ -64,9 +89,42 @@ inputs = processor(
 )
 inputs = inputs.to(DEVICE)
 
-# Generate
-with torch.no_grad():
-    out = model.generate(**inputs, max_new_tokens=args.max_new)
-trimmed = out[:, inputs.input_ids.shape[1]:]
-text = processor.batch_decode(trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
-print("Output:\n", text.strip())
+# Assemble generation kwargs
+gen_kwargs = {
+    'max_new_tokens': args.max_new,
+    'repetition_penalty': args.repetition_penalty,
+    'pad_token_id': getattr(processor.tokenizer, 'pad_token_id', None) or getattr(model.config, 'pad_token_id', None) or getattr(model.config, 'eos_token_id', None),
+}
+if args.temperature > 0:
+    gen_kwargs.update({
+        'do_sample': True,
+        'temperature': args.temperature,
+        'top_p': args.top_p,
+    })
+else:
+    gen_kwargs.update({'do_sample': False})
+
+print(f"[Gen] kwargs: {gen_kwargs}")
+
+# Generation with fallback
+attempts = 2 if args.retry_fp32 else 1
+for attempt in range(1, attempts + 1):
+    try:
+        with torch.no_grad():
+            out = model.generate(**inputs, **gen_kwargs)
+        trimmed = out[:, inputs.input_ids.shape[1]:]
+        text = processor.batch_decode(trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        print("Output:\n", text.strip())
+        break
+    except RuntimeError as e:
+        msg = str(e)
+        print(f"[Error] Generation failed (attempt {attempt}): {msg}")
+        nan_issue = 'probability tensor contains either' in msg or 'inf' in msg.lower()
+        if nan_issue and args.retry_fp32 and attempt < attempts:
+            print('[Recover] Reloading model in fp32 and retrying...')
+            torch.cuda.empty_cache() if DEVICE == 'cuda' else None
+            model = AutoModelForVision2Seq.from_pretrained(args.model, trust_remote_code=True, torch_dtype=torch.float32)
+            model.to(DEVICE).eval()
+            continue
+        else:
+            raise
