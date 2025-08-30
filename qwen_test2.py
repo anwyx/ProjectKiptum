@@ -13,14 +13,14 @@ except ImportError:
 
 # --- CLI args to locate local image ---
 parser = argparse.ArgumentParser()
-parser.add_argument('--image', default='data/processed/WechatIMG74255.jpg', help='Path to local image file')
+parser.add_argument('--image', default='data/raw/WechatIMG74255.jpg', help='Path to local image file')
 parser.add_argument('--model', default='Qwen/Qwen2.5-VL-3B-Instruct', help='Model name')
-parser.add_argument('--max-new', type=int, default=512, help='Max new tokens to generate')
+parser.add_argument('--max-new', type=int, default=1024, help='Max new tokens to generate')
 parser.add_argument('--prompt-key', default='detect_descriptive', help='Prompt key defined in models/prompts.py')
 # Decoding / stability controls
-parser.add_argument('--temperature', type=float, default=0.0, help='Temperature (>0 enables sampling)')
+parser.add_argument('--temperature', type=float, default=0.3, help='Temperature (>0 enables sampling)')
 parser.add_argument('--top-p', type=float, default=0.9, help='Top-p nucleus sampling')
-parser.add_argument('--repetition-penalty', type=float, default=1.05, help='Repetition penalty')
+parser.add_argument('--repetition-penalty', type=float, default=1.0, help='Repetition penalty')
 parser.add_argument('--force-fp16', action='store_true', help='Force fp16 even on devices where it may be unstable')
 parser.add_argument('--force-fp32', action='store_true', help='Force fp32 precision')
 parser.add_argument('--retry-fp32', action='store_true', help='On NaN/inf prob error, reload model in fp32 and retry')
@@ -86,6 +86,9 @@ messages = [
 # Build inputs
 chat_text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 image_inputs, video_inputs = process_vision_info(messages)
+print(f"#images={len(image_inputs)} #videos={len(video_inputs)}")
+if len(image_inputs) == 0:
+    print("[Warning] No image inputs detected! The model will not see the image. If this persists, try loading the image with PIL and pass directly to processor.")
 inputs = processor(
     text=[chat_text],
     images=image_inputs,
