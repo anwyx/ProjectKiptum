@@ -1,5 +1,5 @@
 # ProjectKiptum
-<div align="center" img width="200" height="200" alt="App Logo" src="https://github.com/user-attachments/assets/dab70112-1c42-4ef0-a576-7d7d9277216a" />
+<img width="200" height="200" alt="App Logo" src="https://github.com/user-attachments/assets/dab70112-1c42-4ef0-a576-7d7d9277216a" />
 
 PrivyLens, a privacy-first image redaction agent using LLM that automatically detects sensitive information in photos and instantly blurs it on-device.
 
