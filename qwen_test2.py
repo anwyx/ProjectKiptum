@@ -14,7 +14,7 @@ except ImportError:
 
 # --- CLI args to locate local image ---
 parser = argparse.ArgumentParser()
-parser.add_argument('--image', default='data/raw/WechatIMG74255.jpg', help='Path to local image file')
+parser.add_argument('--image', default='data/raw/WechatIMG5460.jpg', help='Path to local image file')
 parser.add_argument('--model', default='Qwen/Qwen2.5-VL-7B-Instruct', help='Model name')
 parser.add_argument('--max-new', type=int, default=1024, help='Max new tokens to generate')
 parser.add_argument('--prompt-key', default='detect_descriptive', help='Prompt key defined in models/prompts.py')
