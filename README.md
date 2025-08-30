@@ -1,40 +1,40 @@
 # ProjectKiptum
 
-A framework for Task-and-Motion Planning (TAMP) with ManiSkill and PDDL.  
-Defines a dynamic PDDL‑to‑ManiSkill converter and a high‑level test harness.
+PrivyLens, a privacy-first image redaction agent using LLM that automatically detects sensitive information in photos and instantly blurs it on-device.
 
 ---
 
 ## 📁 Repository Structure
 
 ```
-TAMPbench/
-├── setup.py
+ProjectKiptum/
+├── test.py
+├── main.py
+├── app.py
+├── requirements.txt        # dependencies
 ├── README.md               # ← this file
 ├── .gitignore
-├── scripts/                # scripts list
-├── src/
-│   └── tampbench/          # Installable Python package
-│       ├── __init__.py
-│       ├── env/
-│       │   ├── __init__.py
-│       │   ├── pddl_maniskill_converter.py  # Convert pddl to maniskill tasks
-│       │   ├── action.py       # PDDLAction implementation
-│       │   ├── tamp_env.py     # Environment glue code
-|       |   └── utils.py        # Env utils
-│       ├── datasets/           # datasets download scripts from huggingface
-|       ├── motion_planner/     # motion_planner for translate pddl action to motion (only used in data collection+ task planning only)
-|       |   └── motion_solver.py
-|       ├──policy/              # policy warpper 
-|── benchmark/
-│   └── table-top/  # table on tasks
-|       ├── super_long_horizon/ #task type
-|       ├── clutter/
-├── baselines/ 
-|        ├── tamp_baselines
-|        └── vla_baselines  
-└── examples/
-    └── test.py                # Example: example scripts for how to use environment. Future include notebook for easy start.
+├── assets/ 
+|       ├── App Logo
+|       ├── style.css
+├── config/ 
+|       ├── model_config.py
+├── data/
+│       └── raw/          
+│       ├── processed/
+├── models/
+│       └── __pycache__/
+|       ├── prompts.py
+|       ├── qwen.py
+|       ├── qwen_model.py
+├── pages/
+│       └── __pycache__/
+|       ├── gallery.py
+|       ├── home.py
+└── utils/
+        ├── annotations.py
+        ├── detection.py
+        └── image_utils.py               
 ```
 
 ---
