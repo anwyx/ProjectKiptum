@@ -4,6 +4,7 @@ from transformers import AutoProcessor, AutoModelForVision2Seq
 import argparse
 from pathlib import Path
 from models.prompts import get_prompt  # added
+from PIL import Image
 
 # Try to import vision helper
 try:
@@ -29,6 +30,22 @@ args = parser.parse_args()
 image_path = Path(args.image)
 if not image_path.exists():
     raise SystemExit(f"Image not found: {image_path}")
+
+# Resize image if too large
+MAX_SIDE = 1024
+img = Image.open(image_path)
+if max(img.size) > MAX_SIDE:
+    scale = MAX_SIDE / max(img.size)
+    new_size = (int(img.size[0] * scale), int(img.size[1] * scale))
+    img = img.resize(new_size, Image.LANCZOS)
+    print(f"[Resize] Image resized to: {img.size}")
+    # Save to a temp file for downstream pipeline
+    resized_path = image_path.parent / (image_path.stem + f'_resized{image_path.suffix}')
+    img.save(resized_path)
+    image_path = resized_path
+else:
+    print(f"[Resize] Image size OK: {img.size}")
+
 print(f"Using image: {image_path}")
 
 DEVICE = (
