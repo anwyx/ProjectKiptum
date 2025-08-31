@@ -9,35 +9,32 @@ PrivyLens, a privacy-first image redaction agent using LLM that automatically de
 
 ## 📁 Repository Structure
 
+
 ```
 ProjectKiptum/
-├── test.py
-├── main.py
-├── app.py
-├── requirements.txt        # dependencies
-├── README.md               # ← this file
-├── .gitignore
-├── assets/ 
-|       ├── App Logo
-|       ├── style.css
-├── config/ 
-|       ├── model_config.py
-├── data/
-│       └── raw/          
-│       ├── processed/
-├── models/
-│       └── __pycache__/
-|       ├── prompts.py
-|       ├── qwen.py
-|       ├── qwen_model.py
-├── pages/
-│       └── __pycache__/
-|       ├── gallery.py
-|       ├── home.py
-└── utils/
-        ├── annotations.py
-        ├── detection.py
-        └── image_utils.py               
+├── test.py               # Example/test script for running the app or features
+├── app.py                # Dash app initialization and layout
+├── requirements.txt      # Python dependencies
+├── README.md             # Project documentation (this file)
+├── assets/               # Static assets for Dash (CSS, images, etc.)
+│   ├── App Logo          # App logo image(s)
+│   └── style.css         # Custom styles for the app
+├── config/               # Configuration files
+│   └── model_config.py   # Model and app configuration settings
+├── data/                 # Data storage
+│   ├── raw/              # Raw, unprocessed images
+│   └── processed/        # Processed/blurred images
+├── models/               # Model code and weights
+│   ├── prompts.py        # Prompt templates for LLMs
+│   ├── qwen.py           # Qwen model interface/utilities
+│   └── qwen_model.py     # Qwen model loading and logic
+├── pages/                # Dash multi-page app modules
+│   ├── gallery.py        # Gallery page (image display, blur, unlock)
+│   └── home.py           # Home/landing page
+└── utils/                # Utility modules
+    ├── annotations.py    # Annotation helpers for images
+    ├── detection.py      # Detection logic (e.g., face, object)
+    └── image_utils.py    # Image processing utilities
 ```
 
 ---
@@ -66,7 +63,7 @@ ProjectKiptum/
 python test.py
 ```
 
-You should see output like:
+
 
 
 
